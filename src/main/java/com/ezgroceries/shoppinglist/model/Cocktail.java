@@ -7,7 +7,6 @@ import lombok.ToString;
 import lombok.experimental.Accessors;
 
 import java.util.Set;
-import java.util.TreeSet;
 
 @Getter
 @Setter
@@ -21,6 +20,15 @@ public class Cocktail {
     String glass;
     String instructions;
     String image;
-    Set<String> ingredients = new TreeSet<>();
-    String category;
+
+    String ingredient1;
+
+    String ingredient2;
+
+    String ingredient3;
+
+    String ingredient4;
+
+    String ingredient5;
+    Set<String> ingredients;
 }

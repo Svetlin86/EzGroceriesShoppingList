@@ -1,7 +1,10 @@
 package com.ezgroceries.shoppinglist.controller;
 
+import com.ezgroceries.shoppinglist.external.CocktailDBClient;
+import com.ezgroceries.shoppinglist.external.CocktailDBResponse;
 import com.ezgroceries.shoppinglist.model.Cocktail;
 import com.ezgroceries.shoppinglist.model.ShoppingList;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -12,20 +15,24 @@ import java.net.URI;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static java.util.stream.Collectors.toSet;
+
 @RestController
+@RequiredArgsConstructor
 public class MainController {
     private static final Logger log = LoggerFactory.getLogger(MainController.class);
 
+    private final CocktailDBClient cocktailDBClient;
+
     @GetMapping("/cocktails")
     public ResponseEntity<Set<Cocktail>> findCocktailList(@RequestParam String search) {
+        CocktailDBResponse cocktailDBResponse = cocktailDBClient.searchCocktails(search);
 
-        Set<Cocktail> cocktails = Set.of(margerita, blueMargerita);
+        Set<Cocktail> cocktailSet = cocktailDBResponse.getDrinks().stream()
+                .map(CocktailDBResponse::toCocktail)
+                .collect(toSet());
 
-        if (cocktails.stream().allMatch(cocktail -> cocktail.getCategory().equals(search))) {
-            return ResponseEntity.ok().body(cocktails);
-        }
-
-        throw new RuntimeException();
+        return ResponseEntity.ok(cocktailSet);
     }
 
     @PostMapping("/shopping-lists")
@@ -85,7 +92,9 @@ public class MainController {
 
     @GetMapping("/shopping-lists")
     public ResponseEntity<Set<ShoppingList>> findAllShoppingList() {
+
         Set<ShoppingList> shoppingLists = Set.of(myShoppingList, mySecondShoppingList);
+
         return ResponseEntity.ok().body(shoppingLists);
     }
 
@@ -100,8 +109,7 @@ public class MainController {
             .setIngredients(Set.of("Tequila",
                     "Triple sec",
                     "Lime juice",
-                    "Salt"))
-            .setCategory("Russian");
+                    "Salt"));
 
     Cocktail blueMargerita = new Cocktail().setCocktailId("d615ec78-fe93-467b-8d26-5d26d8eab073")
             .setName("Blue Margerita")
@@ -111,8 +119,7 @@ public class MainController {
             .setIngredients(Set.of("Tequila",
                     "Blue Curacao",
                     "Lime juice",
-                    "Salt"))
-            .setCategory("Russian");
+                    "Salt"));
 
     ShoppingList myShoppingList = new ShoppingList().setShoppingListId("90689338-499a-4c49-af90-f1e73068ad4f")
             .setName("MyShoppingList").setCocktails(Set.of(margerita, blueMargerita));
