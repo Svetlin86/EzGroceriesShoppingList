@@ -1,34 +1,51 @@
 package com.ezgroceries.shoppinglist.model;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.experimental.Accessors;
+import com.ezgroceries.shoppinglist.dto.CocktailDto;
+import com.ezgroceries.shoppinglist.utilities.StringSetConverter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Set;
+import java.util.UUID;
 
-@Getter
-@Setter
-@Accessors(chain = true)
-@EqualsAndHashCode
-@ToString
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "cocktail")
 public class Cocktail {
 
-    String cocktailId;
+    @Id
+    UUID id;
+
+    @Column(name = "id_drink")
+    String idDrink;
     String name;
+
     String glass;
+
     String instructions;
+
     String image;
 
-    String ingredient1;
-
-    String ingredient2;
-
-    String ingredient3;
-
-    String ingredient4;
-
-    String ingredient5;
+    @Convert(converter = StringSetConverter.class)
     Set<String> ingredients;
+
+    @OneToMany(mappedBy = "cocktail")
+    Set<CocktailShoppingList> cocktailShoppingLists;
+
+    @JsonIgnore
+    public CocktailDto getCocktailDto() {
+        return CocktailDto.builder()
+                .id(getId().toString())
+                .cocktailId(getIdDrink())
+                .name(getName())
+                .image(getImage())
+                .glass(getGlass())
+                .instructions(getInstructions())
+                .ingredients(getIngredients()).build();
+    }
 }

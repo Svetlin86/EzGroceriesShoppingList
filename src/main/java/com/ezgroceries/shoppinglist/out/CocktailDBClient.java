@@ -1,4 +1,4 @@
-package com.ezgroceries.shoppinglist.external;
+package com.ezgroceries.shoppinglist.out;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.stereotype.Component;
@@ -11,7 +11,4 @@ public interface CocktailDBClient {
 
     @GetMapping(value = "search.php")
     CocktailDBResponse searchCocktails(@RequestParam("s") String search);
-
-
-
 }
