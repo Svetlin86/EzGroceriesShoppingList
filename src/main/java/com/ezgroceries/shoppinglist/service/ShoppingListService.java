@@ -65,5 +65,4 @@ public class ShoppingListService {
                 () -> new Exception("No such shopping list")
         ).shoppingListDto();
     }
-
 }
