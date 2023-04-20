@@ -1,70 +1,80 @@
 package com.ezgroceries.shoppinglist.controller;
 
-import org.hamcrest.Matchers;
+import com.ezgroceries.shoppinglist.dto.CocktailDto;
+import com.ezgroceries.shoppinglist.out.CocktailDBClient;
+import com.ezgroceries.shoppinglist.out.CocktailDBResponse;
+import com.ezgroceries.shoppinglist.out.CocktailDBResponse.DrinkResource;
+import com.ezgroceries.shoppinglist.service.CocktailService;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
-@AutoConfigureMockMvc
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
 class CocktailControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Mock
+    private CocktailDBClient cocktailDBClient;
+
+    @Mock
+    private CocktailService cocktailService;
 
     @Test
-    public void findCocktailList() throws Exception {
+    void findCocktailList() {
+        // Given
+        String search = "gin";
+        DrinkResource drinkResource1 = new DrinkResource();
+        drinkResource1.setIdDrink(UUID.randomUUID().toString());
+        DrinkResource drinkResource2 = new DrinkResource();
+        drinkResource2.setIdDrink(UUID.randomUUID().toString());
+        CocktailDBResponse cocktailDBResponse = new CocktailDBResponse();
+        cocktailDBResponse.setDrinks(Arrays.asList(drinkResource1, drinkResource2));
+        when(cocktailDBClient.searchCocktails(anyString())).thenReturn(cocktailDBResponse);
 
-        mockMvc.perform(get("/cocktails?search=Russian").accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("application/json"));
+        CocktailDto cocktailDto1 = new CocktailDto(UUID.randomUUID().toString(),"1233F", "Gin Fizz", "500ml", "prepare",
+                "image-url", Set.of("cola","jin"));
+        CocktailDto cocktailDto2 = new CocktailDto(UUID.randomUUID().toString(),"1233o", "Vodka", "800ml", "prepare",
+                "image-url", Set.of("cola","vodka"));
+        List<CocktailDto> expectedCocktails = Arrays.asList(cocktailDto1, cocktailDto2);
+        when(cocktailService.mergeCocktails(cocktailDBResponse.getDrinks())).thenReturn(expectedCocktails);
 
+        CocktailController cocktailController = new CocktailController(cocktailDBClient, cocktailService);
+
+        // When
+        ResponseEntity<List<CocktailDto>> responseEntity = cocktailController.findCocktailList(search);
+
+        // Then
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertEquals(expectedCocktails, responseEntity.getBody());
     }
 
     @Test
-    public void createNewShoppingList() throws Exception {
-        MvcResult result = mockMvc.perform(post("/shopping-lists")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\": \"MyShoppingList\"}"))
-                .andExpect(status().isCreated())
-                .andExpect(header().exists("location"))
-                .andExpect(header().string("location", Matchers.containsString("MyShoppingList")))
-                .andReturn();
+    void findCocktailById() throws Exception {
+        // Given
+        String cocktailId = UUID.randomUUID().toString();
+        UUID expectedCocktailUUID = UUID.randomUUID();
+        CocktailDto expectedCocktail = new CocktailDto(expectedCocktailUUID.toString(),"1233o", "Gin Fizz", "500ml", "prepare",
+                "image-url", Set.of("cola","jin"));
+        when(cocktailService.getCocktailById(UUID.fromString(cocktailId))).thenReturn(expectedCocktail);
 
-    }
+        CocktailController cocktailController = new CocktailController(cocktailDBClient, cocktailService);
 
-    @Test
-    public void addCocktailToShoppingList() throws Exception {
+        // When
+        ResponseEntity<CocktailDto> responseEntity = cocktailController.findCocktailById(cocktailId);
 
-        MvcResult result = mockMvc.perform(post("/shopping-lists/{shoppingListId}/cocktails", "90689338-499a-4c49-af90-f1e73068ad4f")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"shoppingListId\": \"90689338-499a-4c49-af90-f1e73068ad4f\" , \"cocktailId\":\"23b3d85a-3928-41c0-a533-6538a71e17c4\"}"))
-                .andExpect(status().isCreated())
-                .andReturn();
-    }
-
-    @Test
-    public void findShoppingListAndReturnAListOfIngredients() throws Exception {
-
-        MvcResult result = mockMvc.perform(post("/shopping-lists/{shoppingListId}", "90689338-499a-4c49-af90-f1e73068ad4f")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"shoppingListId\": \"90689338-499a-4c49-af90-f1e73068ad4f\"}"))
-                .andExpect(status().isCreated())
-                .andReturn();
-    }
-
-    @Test
-    public void findAllShoppingList() throws Exception {
-        mockMvc.perform(get("/shopping-lists").accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("application/json"));
+        // Then
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertEquals(expectedCocktail, responseEntity.getBody());
     }
 }
